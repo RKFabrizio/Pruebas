@@ -97,6 +97,21 @@ namespace LBW.Controllers
             return Json(await DataSourceLoader.LoadAsync(lookup, loadOptions));
         }
 
+        [HttpGet]
+        public async Task<IActionResult> ProductosFormLookup(DataSourceLoadOptions loadOptions)
+        {
+            var lookup = from producto in _context.Productos
+                         join categoria in _context.Categorias on producto.CategoriaID equals categoria.CategoriaID
+                         orderby producto.Nombre
+                         select new
+                         {
+                             Value = producto.ProductoID,
+                             Text = producto.Nombre
+                         };
+
+            return Json(await DataSourceLoader.LoadAsync(lookup, loadOptions));
+        }
+
 
         [HttpGet]
         public async Task<IActionResult> EstadosLookup(DataSourceLoadOptions loadOptions) {

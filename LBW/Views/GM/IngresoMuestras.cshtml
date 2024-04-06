@@ -54,57 +54,144 @@
 }
 
 @section PageActions {
+    <div id="popupContainer" style="width: 300px;">
+        <div id="formContainer" style="width: 300px; margin: 20px auto;">
 
+            @(Html.DevExtreme().Form<LBW.Models.Entity.SubProducto>()
+                .Items(items =>
+                {
+                    items.AddSimpleFor(m => m.ProductoID)
+                    
+                    .Label(l => l
+                    .Text("Producto")
+                    .Location(FormLabelLocation.Top) // Ubicar la etiqueta en la parte superior del control
+                    )
+                    .Editor(e => e
+                    .Lookup()
+                    .Name("productoLookup")
+                    .DataSource(ds => ds.WebApi().Controller("SubProductoes").LoadAction("ProductosFormLookup").Key("Value"))
+                    .ValueExpr("Value")
+                    .DisplayExpr("Text")
+                    );
+                })
+                )
+        </div>
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
 
+        <div style="text-align: center; margin-top: 10px;">
+            <button id="selectButton"></button>
+        </div>
+    </div>
+}
+
+ @using (Html.BeginForm("Post", "Pagoes", FormMethod.Post, new { id = "myForm1", @class = "myForm", enctype = "multipart/form-data" }))
+{
+    @(Html.DevExtreme().Form<LBW.Models.Entity.SubProducto>()
+    .Items(items =>
+    {
+
+        items.AddSimpleFor(m => m.Nombre);
+
+        items.AddSimpleFor(m => m.EstadoID)
+            .Label(l => l.Text("Estado"))
+            .Editor(e => e
+
+                .Lookup()
+                .DataSource(ds => ds.WebApi().Controller("SubProductoes").LoadAction("EstadosLookup").Key("Value"))
+                .ValueExpr("Value")
+                .DisplayExpr("Text")
+            );
+    })
+)
 }
 
 
-@(Html.DevExtreme().DataGrid<LBW.Models.Entity.SubProducto>()
-    .DataSource(ds => ds.Mvc()
-        .Controller("SubProductoes")
-        .LoadAction("Get")
-        .InsertAction("Post")
-        .UpdateAction("Put")
-        .Key("SubProductoID")
-    )
-    .RemoteOperations(true)
-    .Columns(columns => {
-
-       columns.Add().AllowEditing(false)
-                  .Alignment(HorizontalAlignment.Center)
-                  .Width(100)
-                  .CellTemplate(@<text>
-            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-test-pipe-2" width="44" height="44" viewBox="0 0 24 24" stroke-width="1.5" stroke="#00abfb" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                <path d="M15 3v15a3 3 0 0 1 -6 0v-15" />
-                <path d="M9 12h6" />
-                <path d="M8 3h8" />
-            </svg>
-        </text>);
-
-        columns.AddFor(m => m.SubProductoID);
-
-        columns.AddFor(m => m.Nombre);
-
-        columns.AddFor(m => m.ProductoID).Lookup(lookup => lookup
-            .DataSource(ds => ds.WebApi().Controller("SubProductoes").LoadAction("ProductosLookup").Key("Value"))
-            .ValueExpr("Value")
-            .DisplayExpr("Text")
-        ).GroupIndex(0);
-
-        columns.AddFor(m => m.EstadoID).Lookup(lookup => lookup
-            .DataSource(ds => ds.WebApi().Controller("SubProductoes").LoadAction("EstadosLookup").Key("Value"))
-            .ValueExpr("Value")
-            .DisplayExpr("Text")
-        );
-
-    })
-    .Editing(e => e
-        .AllowAdding(true)
-        .AllowUpdating(true)
-    )
-)
 
 <script>
  
+
+    $(function () {
+        var popupInstance = $("#popupContainer").dxPopup({
+            title: "Seleccionar un Producto",
+            maxWidth: 500, // Establecer el ancho máximo del popup en 500px
+            visible: true, // Mostrar el pop-up automáticamente al cargar la página
+            onHidden: function (e) {
+                // Este evento se dispara cuando se oculta el pop-up
+                console.log("Pop-up abierto");
+            }
+                
+        }).dxPopup("instance");
+
+        $("#selectButton").dxButton({
+            stylingMode: "contained", // Aplicar estilo contained al botón
+            text: "Cerrar",
+            type: "default",
+            width: 120,
+
+            onClick: function (e) {
+                var productoLookup = $("#productoLookup").dxLookup("instance");
+
+                if (productoLookup) {
+                    var selectedProductId = productoLookup.option("value");
+                    // Ahora 'selectedProductId' contiene el ProductoID seleccionado
+                    console.log("Producto ID seleccionado:", selectedProductId);
+
+                } else {
+                    console.error("El control Lookup no se ha inicializado correctamente.");
+                }
+
+                popupInstance.hide(); // Cerrar el popup al hacer clic en el botón
+
+            },
+            elementAttr: {
+                style: "text-align: center; line-height: normal;" // Centrar el texto dentro del botón
+            }
+        });
+    });
+
+    $(document).on('submit', '.myForm', function (e) {
+        e.preventDefault();
+
+        var form = $(this);
+        var url = form.attr('action');
+
+        // Desactivar el botón de envío
+        form.find(':submit').prop('disabled', true);
+
+        var formData = new FormData(form[0]); // Construir objeto FormData
+
+        $.ajax({
+            type: 'POST',
+            url: url,
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function (response) {
+                DevExpress.ui.notify('Tu solicitud fue enviada exitosamente\nNro de Solicitud: ' + response.IdPago, 'success', 6000);
+
+                form.find(':submit').prop('disabled', false);
+
+                form[0].reset();
+
+                // Después de 2 segundos, recargar la página
+                setTimeout(function () {
+                    location.reload();
+                }, 3000);
+            },
+            error: function () {
+                DevExpress.ui.notify('Hubo un error al enviar la solicitud.', 'error', 6000);
+
+                form.find(':submit').prop('disabled', false);
+            }
+        });
+    });
+
 </script>
